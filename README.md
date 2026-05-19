@@ -157,24 +157,32 @@ DATABASE_URL=postgresql+asyncpg://school_user:your_password@localhost/school_aut
 pip install -r requirements.txt
 ```
 
+# Запуск и тестирование
 
-# Запуск
-```bash
-uvicorn app.main:app --reload
-```
+1.  Запустите сервер:
+    ```bash
+    uvicorn app.main:app
+    ```
+2. После запуска, интерактивная документация API (с возможностью тестирования) доступна по адресам:
+
+    Swagger UI: http://localhost:8000/docs
+
+    ReDoc: http://localhost:8000/redoc
+
+
 
 ## Тестовые пользователи
-Все с паролем password:
+Все с паролем `pass`:
 
 Роль |	Email
 -----|--------
-Учитель математики |	teacher.math@school.com
-Ученик (5А)	 |student1@school.com
-Ученик (6А)	 |student2@school.com
-Родитель	 |parent@school.com
-Директор |	director@school.com
-Завхоз |	caretaker@school.com
-Повар |	cook@school.com
+Учитель математики |	t_math@sch.com
+Ученик (5А)	 |s1@sch.com
+Ученик (6А)	 |s2@sch.com
+Родитель	 |p@sch.com
+Директор |	d@sch.com
+Завхоз |	care@sch.com
+Повар |	cook@sch.com
 
 
 ## API Endpoints
