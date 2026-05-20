@@ -5,7 +5,7 @@ from .base import Base
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from class_subject import ClassSubject
-    from teacher_subject import TeacherSubject
+
 
 
 class Subject(Base):
@@ -16,4 +16,4 @@ class Subject(Base):
     description: Mapped[str] = mapped_column(Text, nullable=True)
 
     class_subjects: Mapped[list["ClassSubject"]] = relationship("ClassSubject", back_populates="subject")
-    teacher_subjects: Mapped[list["TeacherSubject"]] = relationship("TeacherSubject", back_populates="subject")
+  

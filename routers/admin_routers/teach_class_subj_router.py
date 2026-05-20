@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from app.database import SessionDep
 from models import Class, Subject, User, TeacherClassSubject, ClassSubject
-
+from .dependences import DirectorDep
 
 teach_class_subj_router = APIRouter(
     prefix='/teacher-class-subject',
@@ -15,6 +15,7 @@ teach_class_subj_router = APIRouter(
 async def assign_teacher_to_class_subject(
     teacher_id: int,
     class_subject_id: int,
+    director: DirectorDep,
     session: SessionDep
 ):
     """Назначить учителя на конкретный предмет в конкретном классе"""
@@ -54,6 +55,7 @@ async def assign_teacher_to_class_subject(
 async def remove_teacher_from_class_subject(
     teacher_id: int,
     class_subject_id: int,
+    director: DirectorDep,
     session: SessionDep
 ):
     """Снять учителя с предмета в классе"""

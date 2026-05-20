@@ -2,7 +2,7 @@ from .base import Base
 from .class_subject import ClassSubject
 from .subject import Subject
 from .klass import Class
-from .teacher_subject import TeacherSubject
+# from .teacher_subject import TeacherSubject
 from .teacher_class_subject import TeacherClassSubject
 from .user import User
 from .role import Role
@@ -22,7 +22,7 @@ __all__ = [
     "Class", 
     "Subject",
     "ClassSubject", 
-    "TeacherSubject", 
+    # "TeacherSubject", 
     "TeacherClassSubject",
     "ParentStudent", 
     "Schedule", 

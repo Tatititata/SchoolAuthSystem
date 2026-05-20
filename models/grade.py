@@ -17,7 +17,7 @@ class Grade(Base):
     student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     class_subject_id: Mapped[int] = mapped_column(ForeignKey("class_subjects.id", ondelete="CASCADE"), nullable=False)
     grade: Mapped[int] = mapped_column(Integer, nullable=False)  # 2,3,4,5
-    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     # Мягкое удаление
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

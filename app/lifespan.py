@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, inspect
 from models import Base, Role, Permission, RolePermission, Class, ClassSubject, Subject
-from models import User, UserRole, TeacherClassSubject, TeacherSubject, ParentStudent, Grade
+from models import User, UserRole, TeacherClassSubject, ParentStudent, Grade
 from .database import engine
 from .auth import hash_password
 
@@ -112,8 +112,6 @@ async def fill_tables(session: AsyncSession) -> None:
             full_name="Kate Cook", is_active=True)
         session.add_all([teacher_math, student_1, student_2, parent, admin_user, director, caretaker, cook])
         await session.flush()
-
-        session.add(TeacherSubject(teacher_id=teacher_math.id, subject_id=math.id))
 
         session.add(TeacherClassSubject(teacher_id=teacher_math.id, class_subject_id=cs_5a_math.id))
         session.add(TeacherClassSubject(teacher_id=teacher_math.id, class_subject_id=cs_5b_math.id))

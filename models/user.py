@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from grade import Grade
     from teacher_class_subject import TeacherClassSubject
     from token_blacklist import TokenBlacklist
-    from teacher_subject import TeacherSubject
     from parent_student import ParentStudent
 
 
@@ -36,9 +35,7 @@ class User(Base):
         "TokenBlacklist", back_populates="user"
     )
     # Учительские связи
-    teacher_subjects: Mapped[list["TeacherSubject"]] = relationship(
-        "TeacherSubject", back_populates="teacher", foreign_keys="TeacherSubject.teacher_id"
-    )
+
     teacher_classes: Mapped[list["TeacherClassSubject"]] = relationship(
         "TeacherClassSubject", back_populates="teacher"
     )

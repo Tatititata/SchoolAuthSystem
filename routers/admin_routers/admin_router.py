@@ -4,13 +4,14 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import SessionDep
-from models import Permission, Class, Subject, TeacherSubject
+from models import Permission, Class, Subject
 from models import User, TeacherClassSubject, ClassSubject
 from app import auth
 from .role_router import roles_router
 from .user_role_router import user_role_router
 from .role_permiss_router import role_permiss_router
 from .teach_class_subj_router import teach_class_subj_router
+from .dependences import AdminDep
 
 admin_router = APIRouter(
     prefix='/admin',
@@ -26,29 +27,12 @@ admin_router.include_router(teach_class_subj_router)
 
 @admin_router.post("/permissions")
 async def create_permission(
-    token: str,
     resource_type: str,
     action: str,
-    session: SessionDep
+    session: SessionDep,
+    admin: AdminDep
 ):
-    """Создать новое разрешение (только admin)"""
-    user_id = auth.verify_token(token)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    # Проверка admin
-    result = await session.execute(
-        select(User)
-        .where(User.id == user_id)
-        .options(selectinload(User.roles))
-    )
-    current_user = result.scalar_one_or_none()
-    
-    if not current_user or not current_user.is_active:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    if not any(role.name == "admin" for role in current_user.roles):
-        raise HTTPException(status_code=403, detail="Admin access required")
+    # """Создать новое разрешение (только admin)"""
     
     # Проверяем, не существует ли уже
     existing = await session.execute(
@@ -66,98 +50,6 @@ async def create_permission(
     
     return {"id": new_perm.id, "resource_type": resource_type, "action": action}
 
-
-@admin_router.post("/teacher-class-subject")
-async def assign_teacher_to_class_subject(
-    teacher_id: int,
-    class_subject_id: int,
-    session: SessionDep
-):
-    """Назначить учителя на конкретный предмет в конкретном классе"""
-    
-    # Проверяем, существует ли учитель
-    teacher = await session.get(User, teacher_id)
-    if not teacher:
-        raise HTTPException(404, "Teacher not found")
-    
-    # Проверяем, существует ли class_subject
-    class_subject = await session.get(ClassSubject, class_subject_id)
-    if not class_subject:
-        raise HTTPException(404, "Class-subject relationship not found")
-    
-    # Проверяем, не назначен ли уже
-    existing = await session.execute(
-        select(TeacherClassSubject).where(
-            TeacherClassSubject.teacher_id == teacher_id,
-            TeacherClassSubject.class_subject_id == class_subject_id
-        )
-    )
-    if existing.first():
-        raise HTTPException(400, "Teacher already assigned to this class-subject")
-    
-    # Назначаем
-    assignment = TeacherClassSubject(
-        teacher_id=teacher_id,
-        class_subject_id=class_subject_id
-    )
-    session.add(assignment)
-    await session.commit()
-    
-    return {"message": "Teacher assigned successfully"}
-
-
-@admin_router.delete("/teacher-class-subject")
-async def remove_teacher_from_class_subject(
-    teacher_id: int,
-    class_subject_id: int,
-    session: SessionDep
-):
-    """Снять учителя с предмета в классе"""
-    
-    result = await session.execute(
-        select(TeacherClassSubject).where(
-            TeacherClassSubject.teacher_id == teacher_id,
-            TeacherClassSubject.class_subject_id == class_subject_id
-        )
-    )
-    assignment = result.scalar_one_or_none()
-    if not assignment:
-        raise HTTPException(404, "Assignment not found")
-    
-    await session.delete(assignment)
-    await session.commit()
-    
-    return {"message": "Teacher removed successfully"}
-
-@admin_router.get("/teacher-class-subject")
-async def get_all_assignments(session: SessionDep):
-    """Получить список всех назначений учителей"""
-    
-    result = await session.execute(
-        select(
-            TeacherClassSubject.id,
-            User.email.label("teacher_email"),
-            User.full_name.label("teacher_name"),
-            Class.name.label("class_name"),
-            Subject.name.label("subject_name")
-        )
-        .join(User, TeacherClassSubject.teacher_id == User.id)
-        .join(ClassSubject, TeacherClassSubject.class_subject_id == ClassSubject.id)
-        .join(Class, ClassSubject.class_id == Class.id)
-        .join(Subject, ClassSubject.subject_id == Subject.id)
-    )
-    assignments = result.all()
-    
-    return [
-        {
-            "id": a.id,
-            "teacher_email": a.teacher_email,
-            "teacher_name": a.teacher_name,
-            "class_name": a.class_name,
-            "subject_name": a.subject_name
-        }
-        for a in assignments
-    ]
 
 
 @admin_router.get("/class-subjects")
@@ -181,8 +73,8 @@ async def get_class_subjects(session: SessionDep):
 async def set_student_class(
     user_id: int,
     class_id: int,
-    session: SessionDep
-):
+    session: SessionDep,
+    admin: AdminDep):
     """Установить класс ученику"""
     
     user = await session.get(User, user_id)
@@ -199,26 +91,3 @@ async def set_student_class(
     
     return {"message": f"Class set to {class_obj.name}"}
 
-
-@admin_router.post("/teacher-subject")
-async def assign_teacher_subject(
-    teacher_id: int,
-    subject_id: int,
-    session: SessionDep
-):
-    """Назначить учителю компетенцию (какой предмет он может вести)"""
-    
-    existing = await session.execute(
-        select(TeacherSubject).where(
-            TeacherSubject.teacher_id == teacher_id,
-            TeacherSubject.subject_id == subject_id
-        )
-    )
-    if existing.first():
-        raise HTTPException(400, "Teacher already has this subject competency")
-    
-    ts = TeacherSubject(teacher_id=teacher_id, subject_id=subject_id)
-    session.add(ts)
-    await session.commit()
-    
-    return {"message": "Subject competency assigned"}

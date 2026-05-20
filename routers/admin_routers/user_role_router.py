@@ -4,14 +4,14 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import SessionDep
-from models import Permission, Class, Subject, TeacherSubject
-from models import User, Role, RolePermission, TeacherClassSubject, ClassSubject, UserRole
+from models import User, Role, UserRole
 from app import auth
-from .role_router import roles_router
+from .dependences import AdminDep
+
 
 user_role_router = APIRouter(
     prefix='/users',
-    tags=['Admin', 'Users']
+    tags=['Admin', 'Users', "Roles"]
 )
 
 # ----Roles + Users----
@@ -20,27 +20,12 @@ user_role_router = APIRouter(
 async def assign_role_to_user(
     user_id: int,
     role_id: int,
-    token: str,
+    admin: AdminDep,
     session: SessionDep
+    
 ):
     """Назначить роль пользователю (только admin)"""
-    admin_id = auth.verify_token(token)
-    if not admin_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    # Проверка admin
-    result = await session.execute(
-        select(User)
-        .where(User.id == admin_id)
-        .options(selectinload(User.roles))
-    )
-    admin_user = result.scalar_one_or_none()
-    
-    if not admin_user or not admin_user.is_active:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    if not any(role.name == "admin" for role in admin_user.roles):
-        raise HTTPException(status_code=403, detail="Admin access required")
+
     
     # Проверяем, существует ли пользователь
     result = await session.execute(select(User).where(User.id == user_id))
@@ -73,27 +58,10 @@ async def assign_role_to_user(
 async def remove_role_from_user(
     user_id: int,
     role_id: int,
-    token: str,
+    admin: AdminDep,
     session: SessionDep
 ):
     """Снять роль с пользователя (только admin)"""
-    admin_id = auth.verify_token(token)
-    if not admin_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    # Проверка admin
-    result = await session.execute(
-        select(User)
-        .where(User.id == admin_id)
-        .options(selectinload(User.roles))
-    )
-    admin_user = result.scalar_one_or_none()
-    
-    if not admin_user or not admin_user.is_active:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    if not any(role.name == "admin" for role in admin_user.roles):
-        raise HTTPException(status_code=403, detail="Admin access required")
     
     # Находим связь
     result = await session.execute(
@@ -114,27 +82,10 @@ async def remove_role_from_user(
 @user_role_router.get("/{user_id}/roles")
 async def get_user_roles(
     user_id: int,
-    token: str,
+    admin: AdminDep,
     session: SessionDep
 ):
     """Получить роли пользователя (только admin)"""
-    admin_id = auth.verify_token(token)
-    if not admin_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    # Проверка admin
-    result = await session.execute(
-        select(User)
-        .where(User.id == admin_id)
-        .options(selectinload(User.roles))
-    )
-    admin_user = result.scalar_one_or_none()
-    
-    if not admin_user or not admin_user.is_active:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    if not any(role.name == "admin" for role in admin_user.roles):
-        raise HTTPException(status_code=403, detail="Admin access required")
     
     result = await session.execute(
         select(User)
